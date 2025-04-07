@@ -5,6 +5,11 @@ import os
 import tempfile
 from pathlib import Path
 import shutil
+import base64
+
+# Create converted directory if it doesn't exist
+converted_dir = os.path.join("data", "converted")
+os.makedirs(converted_dir, exist_ok=True)
 
 def process_ultrasound_image(image_path):
     # Load the image in grayscale
@@ -46,7 +51,7 @@ app_ui = ui.page_sidebar(
             ui.tags.li("Sharpen edges")
         ),
         ui.hr(),
-        ui.download_button("download", "Download Processed Image")
+        ui.input_action_button("save_button", "Save Processed Image", class_="btn-primary")
     ),
     ui.layout_columns(
         ui.card(
@@ -81,10 +86,24 @@ def server(input, output, session):
             return None
         return {"src": processed_image(), "width": "100%"}
 
-    @session.download
-    def download():
+    @reactive.Effect
+    @reactive.event(input.save_button)
+    def save_image():
         if processed_image() is None:
-            return None
-        return Path(processed_image())
+            return
+        
+        # Get the original filename and create a new name for the processed image
+        original_name = input.image()[0]["name"]
+        name, ext = os.path.splitext(original_name)
+        new_filename = f"processed_{name}{ext}"
+        
+        # Save to the converted directory
+        save_path = os.path.join(converted_dir, new_filename)
+        
+        # Copy the processed image to the converted folder
+        shutil.copy2(processed_image(), save_path)
+        
+        # Show a message that the file was saved
+        ui.notification_show(f"Image saved to: {save_path}", duration=5)
 
 app = App(app_ui, server) 

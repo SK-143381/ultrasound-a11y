@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultrasound Image Processor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .preview-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .preview-image {
+            max-width: 100%;
+            max-height: 400px;
+            margin: 10px 0;
+        }
+        .processing-steps {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Ultrasound Image Processor</h1>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Upload Image</h5>
+                        <form id="uploadForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <input type="file" class="form-control" id="image" name="image" accept="image/jpeg,image/png" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Process Image</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="processing-steps">
+                    <h5>Processing Steps:</h5>
+                    <ul>
+                        <li>Invert image colors</li>
+                        <li>Enhance contrast (CLAHE)</li>
+                        <li>Reduce noise</li>
+                        <li>Sharpen edges</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="preview-container">
+                    <h5>Original Image</h5>
+                    <img id="originalPreview" class="preview-image" style="display: none;">
+                    
+                    <h5>Processed Image</h5>
+                    <img id="processedPreview" class="preview-image" style="display: none;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('image').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('originalPreview').src = e.target.result;
+                    document.getElementById('originalPreview').style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            fetch('/process', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = URL.createObjectURL(blob);
+                document.getElementById('processedPreview').src = url;
+                document.getElementById('processedPreview').style.display = 'block';
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    </script>
+</body>
+</html> 
